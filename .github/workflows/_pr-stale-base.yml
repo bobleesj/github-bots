@@ -1,0 +1,82 @@
+name: pr stale base
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  guidance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Warn when the PR is behind the base branch
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = "<!-- quantem-pr-stale-base:v1 -->";
+            const pr = context.payload.pull_request;
+            const code = (value) => `\`${String(value).replaceAll("`", "\\`")}\``;
+            const baseRepository = pr.base.repo.full_name;
+            const baseBranch = pr.base.ref;
+            const headLabel = `${pr.head.repo.owner.login}:${pr.head.ref}`;
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                per_page: 100,
+              },
+            );
+            const existing = comments.find(
+              (comment) =>
+                comment.user?.login === "github-actions[bot]" &&
+                comment.body?.includes(marker),
+            );
+
+            const compare = await github.rest.repos.compareCommitsWithBasehead({
+              owner: pr.base.repo.owner.login,
+              repo: pr.base.repo.name,
+              basehead: `${baseBranch}...${headLabel}`,
+            });
+            const behindBy = compare.data.behind_by ?? 0;
+
+            if (behindBy === 0) {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                });
+              }
+              return;
+            }
+
+            const commitWord = behindBy === 1 ? "commit" : "commits";
+            const body = [
+              marker,
+              `This PR is ${behindBy} ${commitWord} behind ${code(`${baseRepository}:${baseBranch}`)}.`,
+              "",
+              `Fetch that remote and update local ${code(baseBranch)} before you branch, or rebase this branch onto it before review.`,
+              "A warning is enough. The PR can stay open while main moves.",
+            ].join("\n");
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }

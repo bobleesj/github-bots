@@ -6,12 +6,13 @@ Add a thin caller in the consumer repo and pin `@v0`. Bot logic stays in this re
 
 ## Use
 
-Create `.github/workflows/pr-cleanup-guidance.yml` in the consumer repo:
+Create one workflow file per bot. Example: PR cleanup.
+
+`.github/workflows/pr-cleanup-guidance.yml`
 
 ```yaml
 name: pr cleanup guidance
 on:
-  pull_request:
   pull_request_target:
     types: [opened, reopened, closed]
 permissions:
@@ -27,15 +28,17 @@ jobs:
     uses: bobleesj/github-bots/.github/workflows/_pr-cleanup-guidance.yml@v0
 ```
 
-`pull_request` runs the caller from the PR branch, which is what you want while testing a new pin. `pull_request_target` runs from the default branch after the caller is merged, including on forks.
+For fork repos, keep `pull_request_target` so the comment can write. Same-repo callers may also use `pull_request`. Large-file and stale-base callers should include `synchronize`.
 
 ## Bots
 
 | Bot | Workflow | Comment |
 | --- | --- | --- |
 | PR cleanup | `_pr-cleanup-guidance.yml` | Keep the feature branch until merge. Then delete it, remove the worktree, and update local `main`. |
+| Large files | `_pr-large-files.yml` | Warn if the PR adds fat arrays, HTML, or notebook widget state. Use Hugging Face and `quantem github` / `save_state=False`. |
+| Stale base | `_pr-stale-base.yml` | Warn if GitHub `behind_by` is greater than 0: fetch the base remote and update local `main` before you branch, or rebase before review. Warning only. |
 
-Later bots will use the same comment for failed CI, leftover branches, and stale `main`. See `CHANGELOG.md` for what the current `@v0` pin includes.
+See `CHANGELOG.md` for what the current `@v0` pin includes.
 
 ## Versioning
 

@@ -1,0 +1,113 @@
+name: pr large files
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  guidance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Warn about large files and notebook state
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = "<!-- quantem-pr-large-files:v1 -->";
+            const fileLimit = 1_000_000;
+            const notebookLimit = 500_000;
+            const pr = context.payload.pull_request;
+            const code = (value) => `\`${String(value).replaceAll("`", "\\`")}\``;
+            const formatSize = (bytes) => {
+              if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
+              return `${Math.round(bytes / 1000)} KB`;
+            };
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                per_page: 100,
+              },
+            );
+            const existing = comments.find(
+              (comment) =>
+                comment.user?.login === "github-actions[bot]" &&
+                comment.body?.includes(marker),
+            );
+
+            const files = await github.paginate(
+              github.rest.pulls.listFiles,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                per_page: 100,
+              },
+            );
+
+            const flagged = [];
+            for (const file of files) {
+              if (file.status === "removed" || !file.sha) continue;
+              let size = 0;
+              try {
+                const blob = await github.rest.git.getBlob({
+                  owner: pr.head.repo.owner.login,
+                  repo: pr.head.repo.name,
+                  file_sha: file.sha,
+                });
+                size = blob.data.size;
+              } catch (error) {
+                size = 0;
+              }
+              const name = file.filename;
+              const isNotebook = name.endsWith(".ipynb");
+              const limit = isNotebook ? notebookLimit : fileLimit;
+              const looksHeavy = /\.(npy|npz|h5|hdf5|emd|dm3|dm4|mrc|tif|tiff|html)$/i.test(name);
+              if (size >= limit || (looksHeavy && size >= 200_000)) {
+                flagged.push({ name, size, isNotebook });
+              }
+            }
+
+            if (flagged.length === 0) {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                });
+              }
+              return;
+            }
+
+            const lines = [
+              marker,
+              "This PR adds large files or a fat notebook. Do not commit real arrays, baked HTML, or widget state into the repo.",
+              "",
+              ...flagged.map((file) => `- ${code(file.name)} (${formatSize(file.size)})`),
+              "",
+              "Put real data on Hugging Face (or another public host) and load it in the tutorial helper. Docs already bake examples at build time.",
+              "For notebooks: keep `save_state=False`, or run `quantem github` to strip widget state for GitHub preview.",
+            ];
+            const body = lines.join("\n");
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
