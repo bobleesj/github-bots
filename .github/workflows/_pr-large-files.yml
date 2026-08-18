@@ -91,8 +91,10 @@ jobs:
               "",
               ...flagged.map((file) => `- ${code(file.name)} (${formatSize(file.size)})`),
               "",
-              "Put real data on Hugging Face (or another public host) and load it in the tutorial helper. Docs already bake examples at build time.",
+              "Put real data on Hugging Face and load it in the tutorial helper. Docs already bake examples at build time.",
               "For notebooks: keep `save_state=False`, or run `quantem github` to strip widget state for GitHub preview.",
+              "",
+              "How to fix this: https://github.com/bobleesj/github-bots/blob/v0/docs/large-files.md",
             ];
             const body = lines.join("\n");
 
