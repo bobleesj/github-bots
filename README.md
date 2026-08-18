@@ -1,27 +1,14 @@
 # github-bots
 
-Reusable bots for Bob's repositories. The point is not more GitHub noise. The point is that **you should not have to read CI**.
+Reusable GitHub Actions bots. They parse CI and repo state, then leave one PR comment with the result and the next step. Read the comment. Open the Actions tab only if the bot says the parse failed.
 
-CI logs are a machine format. A red X is not an explanation. These bots parse the run the way we already expect it to look, then write one comment: what failed, why it matters, and what to do next. If a PR is also leaving dirty state (feature branch, worktree, stale `main`), the same comment says so.
+Logic lives here. Consumer repos keep a thin caller and pin `@v0`.
 
-That is the whole motivation. Open the PR. Read the bot. Do not open the Actions tab unless the bot says the parse itself broke.
+## Use
 
-## What this grows into
+Add a workflow in the consumer repo. Example: PR cleanup.
 
-A small system of reusable workflows, not a pile of one-off YAML in every repo.
-
-- **CI parse:** failed job, failed test, missing artifact, skipped gate. One comment, expected shape.
-- **State:** leftover branches, dirty worktrees, fork `main` behind upstream, too many open feature branches.
-- **PR hygiene:** keep / delete / update-local-main after merge (this is the first bot).
-- Later: the same comment surface can flag flaky retries, docs that did not rebuild, or a release tag that did not publish.
-
-Consumers stay thin: a 10-line caller in the repo, logic lives here. Pin `@v0`. Develop on `main`, then update `v0` when a bot should go live.
-
-## PR cleanup guidance
-
-First shipped bot. Comments the keep / delete-branch / update-local-main checklist.
-
-In the consumer repo, add `.github/workflows/pr-cleanup-guidance.yml`:
+`.github/workflows/pr-cleanup-guidance.yml`
 
 ```yaml
 name: pr cleanup guidance
@@ -36,3 +23,17 @@ jobs:
   guidance:
     uses: bobleesj/github-bots/.github/workflows/_pr-cleanup-guidance.yml@v0
 ```
+
+## Bots
+
+| Bot | Workflow | Comment |
+| --- | --- | --- |
+| PR cleanup | `_pr-cleanup-guidance.yml` | Keep the feature branch until merge. Then delete it, drop the worktree, and update local `main`. |
+
+Next bots will use the same comment surface for failed CI, leftover branches, and stale `main`.
+
+## Versioning
+
+- Consumers pin `@v0`.
+- Develop on `main`.
+- Fast-forward `v0` when a bot should go live.
