@@ -40,6 +40,8 @@ For fork repos, keep `pull_request_target` so the comment can write. Same-repo c
 
 See `CHANGELOG.md` for what the current `@v0` pin includes.
 
+Agent skill (caller recipe, when to add bots, how to update `@v0`): `github-bots`. Comment wording: `impartial-writing`. Canonical files live in `~/.codex/skills/` and are symlinked into Claude, Cursor, and Grok.
+
 ## Versioning
 
 Pin consumers at `@v0`. Develop on `main`, then fast-forward `v0` when a change should go live. Keep `CHANGELOG.md` in sync with that pin.
