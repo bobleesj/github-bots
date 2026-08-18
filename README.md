@@ -35,7 +35,7 @@ For fork repos, keep `pull_request_target` so the comment can write. Same-repo c
 | Bot | Workflow | Comment |
 | --- | --- | --- |
 | PR cleanup | `_pr-cleanup-guidance.yml` | Keep the feature branch until merge. Then delete it, remove the worktree, and update local `main`. |
-| Large files | `_pr-large-files.yml` | Warn if the PR adds fat arrays, HTML, or notebook widget state. The comment links [how to fix this](docs/large-files.md): Hugging Face, `save_state=False`, and `quantem github`. |
+| Large files | `_pr-large-files.yml` | Comment when a pull request adds arrays, generated HTML, or notebook widget state above the size limits. Links [how to store data and notebooks](docs/large-files.md). |
 | Stale base | `_pr-stale-base.yml` | Warn if GitHub `behind_by` is greater than 0: fetch the base remote and update local `main` before you branch, or rebase before review. Warning only. |
 
 See `CHANGELOG.md` for what the current `@v0` pin includes.

@@ -87,14 +87,14 @@ jobs:
 
             const lines = [
               marker,
-              "This PR adds large files or a fat notebook. Do not commit real arrays, baked HTML, or widget state into the repo.",
+              "This pull request adds files above the repository size limits. Do not commit experimental arrays, generated HTML, or notebook widget state.",
               "",
               ...flagged.map((file) => `- ${code(file.name)} (${formatSize(file.size)})`),
               "",
-              "Put real data on Hugging Face and load it in the tutorial helper. Docs already bake examples at build time.",
-              "For notebooks: keep `save_state=False`, or run `quantem github` to strip widget state for GitHub preview.",
+              "Host experimental data on Hugging Face and load it from the tutorial helper. Documentation builds already generate the examples.",
+              "For notebooks, keep `save_state=False`, or run `quantem github` to remove widget state before GitHub preview.",
               "",
-              "How to fix this: https://github.com/bobleesj/github-bots/blob/v0/docs/large-files.md",
+              "How to store data and notebooks: https://github.com/bobleesj/github-bots/blob/v0/docs/large-files.md",
             ];
             const body = lines.join("\n");
 
