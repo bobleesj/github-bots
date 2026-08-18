@@ -4,7 +4,7 @@ Consumers pin `@v0`. This file is the contract for that pin: which bots exist an
 
 ## v0
 
-Pin every caller at `bobleesj/github-bots/.github/workflows/<workflow>.yml@v0`.
+Pin every caller at `bobleesj/github-bots/.github/workflows/_pr-*.yml@v0`.
 
 Caller recipe:
 
